@@ -2,7 +2,7 @@
 # https://firebase.google.com/docs/extensions/alpha/ref-extension-yaml
 
 name: ext-field-uniqueness  # Identifier for your extension
-version: 0.0.1  # Follow semver versioning
+version: 0.0.2  # Follow semver versioning
 specVersion: v1beta  # Version of the Firebase Extensions specification
 
 # Friendly display name for your extension (~3-5 words)
@@ -27,7 +27,7 @@ sourceUrl: https://github.com/firebase/firebase-tools/tree/master/templates/exte
 
 # Specify whether a paid-tier billing plan is required to use your extension.
 # Learn more in the docs: https://firebase.google.com/docs/extensions/alpha/ref-extension-yaml#billing-required-field
-billingRequired: false
+billingRequired: true
 
 # In an `apis` field, list any Google APIs (like Cloud Translation, BigQuery, etc.)
 # required for your extension to operate.
@@ -46,7 +46,7 @@ resources:
     properties:
       # LOCATION is a user-configured parameter value specified by the user during installation.
       location: ${LOCATION}
-      runtime: "nodejs12"
+      runtime: nodejs14
       eventTrigger:
         eventType: providers/cloud.firestore/eventTypes/document.write
         resource: projects/${PROJECT_ID}/databases/(default)/documents/${COLLECTION_PATH}/{documentId}
@@ -74,6 +74,18 @@ params:
     default: username
     validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
     validationErrorMessage: Must be a valid Cloud Firestore Field
+    required: true
+
+  - param: HASH_FIELD
+    label: Hash field
+    description: >-
+      Would you like to hash the value of the field due to contraints on document IDs?
+    type: select
+    options:
+      - label: Yes (hash using the MD5 algorithm)
+        value: yes
+      - label: No (validate on the client's side)
+        value: no
     required: true
 
   - param: AUX_COLLECTION_PATH

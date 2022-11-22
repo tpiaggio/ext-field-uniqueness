@@ -12,6 +12,8 @@ You can test out this extension right away!
 
 1.  This newly created collection and documents, used in combination with Security Rules, will prevent the client creating documents with duplicate values for the specified field.
 
+1.  You also have the option to hash the `${FIELD_NAME}` selecting 'Yes' when prompted to hash the field upon installation, due to contraints on document IDs.
+
 
 #### Using the extension
 
@@ -20,7 +22,8 @@ Write a document with id _exampleId_ with the string _"bob1234"_ to the field `$
 ```js
 {
   bob1234: {
-    id: exampleId  
+    id: exampleId,
+    ${FIELD_NAME}: bob1234,
   },
 }
 ```
@@ -41,6 +44,15 @@ match /${COLLECTION_PATH}/{id} {
   allow create: if isFieldAvailable();
   allow update: if fieldDidNotChange() || isFieldAvailable();
   allow delete: if ...;
+}
+```
+
+If you opted in to hash the ${FIELD_NAME} due to contraints on document IDs, then your Security Rules change slightly, like this:
+
+```js
+function isFieldAvailable() {
+  let field = hashing.md5(request.resource.data.${FIELD_NAME}).toHexString().lower();
+  return !exists(/databases/$(database)/documents/${AUX_COLLECTION_PATH}/$(field));
 }
 ```
 

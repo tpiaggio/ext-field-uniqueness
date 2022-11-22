@@ -1,6 +1,8 @@
 import * as admin from "firebase-admin";
 import * as functions from 'firebase-functions';
 
+import * as md5 from 'md5';
+
 enum ChangeType {
   CREATE,
   DELETE,
@@ -11,6 +13,7 @@ const config = {
   location: process.env.LOCATION || "",
   collection: process.env.COLLECTION_PATH || "",
   fieldName: process.env.FIELD_NAME || "",
+  hashField: process.env.HASH_FIELD || "",
   auxCollection: process.env.AUX_COLLECTION_PATH || "",
 };
 
@@ -42,7 +45,8 @@ exports.fieldUniqueness =  functions.handler.firestore.document.onWrite(
 const auxCollection = admin.firestore().collection(config.auxCollection);
 
 const extractUniqueField = (snapshot: admin.firestore.DocumentSnapshot): string => {
-  return snapshot.get(config.fieldName);
+  const field = snapshot.get(config.fieldName);
+  return (config.hashField === 'yes') ? md5(field) : field;
 };
 
 const getChangeType = (
@@ -62,7 +66,7 @@ const handleCreateDocument = async (
 ): Promise<void> => {
   const uniqueField = extractUniqueField(snapshot);
   if (uniqueField) {
-    await auxCollection.doc(uniqueField).set({id: snapshot.id});
+    await auxCollection.doc(uniqueField).set({id: snapshot.id, [config.fieldName]: snapshot.get(config.fieldName)});
     functions.logger.log('Document created with unique field');
   } else {
     functions.logger.log('Document created without unique field, no processing is required');
@@ -104,7 +108,7 @@ const handleUpdateDocument = async (
     if (uniqueFieldBefore) {
       batch.delete(auxCollection.doc(uniqueFieldBefore));
     }
-    batch.set(auxCollection.doc(uniqueFieldAfter), {id: after.id});
+    batch.set(auxCollection.doc(uniqueFieldAfter), {id: after.id, [config.fieldName]: after.get(config.fieldName)});
     await batch.commit();
     functions.logger.log('Document updated with unique field');
   }

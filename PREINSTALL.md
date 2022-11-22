@@ -28,6 +28,15 @@ match /users/{userId} {
 }
 ```
 
+If you want, you can hash the value of the field due to contraints on document IDs. For that, you can select 'Yes' when you're prompted to select if you want to hash the field or not. The Security Rules change slightly, looking like this:
+
+```js
+function isUsernameAvailable() {
+  let username = hashing.md5(request.resource.data.username).toHexString().lower();
+  return !exists(/databases/$(database)/documents/usernames/$(username));
+}
+```
+
 #### Additional setup
 
 Before installing this extension, make sure that you've [set up a Cloud Firestore database](https://firebase.google.com/docs/firestore/quickstart) in your Firebase project.
