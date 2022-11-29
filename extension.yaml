@@ -23,7 +23,7 @@ roles:
     reason: Allows the extension to write documents to Cloud Firestore.
 
 # Public URL for the source code of your extension
-sourceUrl: https://github.com/firebase/firebase-tools/tree/master/templates/extensions
+sourceUrl: https://github.com/tpiaggio/ext-field-uniqueness
 
 # Specify whether a paid-tier billing plan is required to use your extension.
 # Learn more in the docs: https://firebase.google.com/docs/extensions/alpha/ref-extension-yaml#billing-required-field
@@ -79,7 +79,7 @@ params:
   - param: HASH_FIELD
     label: Hash field
     description: >-
-      Would you like to hash the value of the field due to contraints on document IDs?
+      The value of the unique field will be used as an id for a new document in Firestore. Would you like to hash the value of the field due to contraints on document IDs?
     type: select
     options:
       - label: Yes (hash using the MD5 algorithm)
