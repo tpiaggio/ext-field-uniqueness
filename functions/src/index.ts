@@ -1,5 +1,7 @@
 import * as admin from "firebase-admin";
 import * as functions from 'firebase-functions';
+import { getExtensions } from "firebase-admin/extensions";
+import { getFunctions } from "firebase-admin/functions";
 
 import * as md5 from 'md5';
 
@@ -15,7 +17,10 @@ const config = {
   fieldName: process.env.FIELD_NAME || "",
   hashField: process.env.HASH_FIELD || "",
   auxCollection: process.env.AUX_COLLECTION_PATH || "",
+  doBackfill: process.env.DO_BACKFILL || "",
 };
+
+const DOCS_PER_BACKFILL = 250;
 
 admin.initializeApp();
 
@@ -113,3 +118,121 @@ const handleUpdateDocument = async (
     functions.logger.log('Document updated with unique field');
   }
 };
+
+const handleExistingDocument = async (
+  snapshot: admin.firestore.DocumentSnapshot,
+  bulkWriter: admin.firestore.BulkWriter
+): Promise<void> => {
+  const uniqueField = extractUniqueField(snapshot);
+  try {
+    if (uniqueField) {
+      const auxDoc = await auxCollection.doc(uniqueField).get();
+      if(auxDoc.exists) {
+        const auxData = auxDoc.data() as FirebaseFirestore.DocumentData;
+        if(auxData.duplicateIds) {
+          await bulkWriter.update(
+            auxCollection.doc(uniqueField),
+            {duplicateIds: [auxDoc.id, snapshot.id]}
+          );
+        } else {
+          await bulkWriter.update(
+            auxCollection.doc(uniqueField),
+            {duplicateIds: admin.firestore.FieldValue.arrayUnion(snapshot.id)}
+          );
+        }
+        functions.logger.log(`Document with unique field already existed, ${config.collection} is duplicated`);
+        throw new Error(`Document with unique field already existed, ${config.collection} is duplicated`);
+      } else {
+        await bulkWriter.set(
+          auxCollection.doc(uniqueField),
+          {id: snapshot.id, [config.fieldName]: snapshot.get(config.fieldName)}
+        );
+      }
+    } else {
+      functions.logger.log('Document without unique field, no processing is required');
+    }
+  } catch (err) {
+    functions.logger.log(`Error executing Field Uniqueness backfill with ${config.collection}: ${uniqueField}`, err);
+    throw err;
+  }
+};
+
+export const fieldUniquenessBackfill = functions.tasks
+  .taskQueue()
+  .onDispatch(async (data: any) => {
+    const runtime = getExtensions().runtime();
+    if (config.doBackfill !== "yes") {
+      await runtime.setProcessingState(
+        "PROCESSING_COMPLETE",
+        'Existing documents were not checked for uniqueness because "Check uniqueness for existing documents?" is configured to false. ' +
+          "If you want to fill in missing checks, reconfigure this instance."
+      );
+      return;
+    }
+    const offset = (data["offset"] as number) ?? 0;
+    const pastSuccessCount = (data["successCount"] as number) ?? 0;
+    const pastErrorCount = (data["errorCount"] as number) ?? 0;
+    // We also track the start time of the first invocation, so that we can report the full length at the end.
+    const startTime = (data["startTime"] as number) ?? Date.now();
+
+    const snapshot = await admin
+      .firestore()
+      .collection(config.collection)
+      .offset(offset)
+      .limit(DOCS_PER_BACKFILL)
+      .get();
+    // Since we will be writing many docs to Firestore, use a BulkWriter for better performance.
+    const writer = admin.firestore().bulkWriter();
+    const documentsChecked = await Promise.allSettled(
+      snapshot.docs.map((doc) => {
+        return handleExistingDocument(doc, writer);
+      })
+    );
+    // Close the writer to commit the changes to Firestore.
+    await writer.close();
+    const newSuccessCount =
+      pastSuccessCount +
+      documentsChecked.filter((p) => p.status === "fulfilled").length;
+    const newErrorCount =
+      pastErrorCount +
+      documentsChecked.filter((p) => p.status === "rejected").length;
+
+    if (snapshot.size == DOCS_PER_BACKFILL) {
+      // Stil have more documents to check uniqueness, enqueue another task.
+      functions.logger.log(`Enqueue next: ${(offset + DOCS_PER_BACKFILL)}`);
+      const queue = getFunctions().taskQueue(
+        "fieldUniquenessBackfill",
+        process.env.EXT_INSTANCE_ID
+      );
+      await queue.enqueue({
+        offset: offset + DOCS_PER_BACKFILL,
+        successCount: newSuccessCount,
+        errorCount: newErrorCount,
+        startTime: startTime,
+      });
+    } else {
+      // No more documents to check uniqueness for, time to set the processing state.
+      functions.logger.log(`Backfill complete. Success count: ${newSuccessCount}, Error count: ${newErrorCount}`);
+      if (newErrorCount == 0) {
+        return await runtime.setProcessingState(
+          "PROCESSING_COMPLETE",
+          `Successfully checked uniqueness for ${newSuccessCount} documents in ${
+            Date.now() - startTime
+          }ms.`
+        );
+      } else if (newErrorCount > 0 && newSuccessCount > 0) {
+        return await runtime.setProcessingState(
+          "PROCESSING_WARNING",
+          `Successfully checked uniqueness for ${newSuccessCount} documents, ${newErrorCount} errors in ${
+            Date.now() - startTime
+          }ms. See function logs for specific error messages.`
+        );
+      }
+      return await runtime.setProcessingState(
+        "PROCESSING_FAILED",
+        `Successfully checked uniqueness for ${newSuccessCount} documents, ${newErrorCount} errors in ${
+          Date.now() - startTime
+        }ms. See function logs for specific error messages.`
+      );
+    }
+  });

@@ -76,6 +76,8 @@ To install an extension, your project must be on the [Blaze (pay as you go) plan
 
 * **fieldUniqueness:** Listens for writes of a specified field to your specified Cloud Firestore collection, then writes a new document using that field's value as the key to a specified aux collection that will serve for checking uniqueness.
 
+* **fieldUniquenessBackfill:** Searches your specified Cloud Firestore collection for existing documents, then writes the new documents in the aux collection.
+
 
 **Access Required**:
 
