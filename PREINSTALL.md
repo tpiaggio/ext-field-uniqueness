@@ -3,7 +3,8 @@ Use this extension to ensure uniqueness on a specified field (for example, usern
 This extension listens to your specified Cloud Firestore collection. If you add a string to a specified field in any document within that collection, this extension:
 
 - Gets the type of event it listened to and the string value of the specified field.
-- Creates or deletes a document with that value as it's key on a separate specified aux collection
+- Creates or deletes a document with that value as it's key on a separate specified aux collection.
+- Allows you to decide if you want to check uniqueness for existing documents or only new ones.
 
 #### Firestore Security Rules
 

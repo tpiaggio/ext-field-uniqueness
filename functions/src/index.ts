@@ -1,9 +1,9 @@
 import * as admin from "firebase-admin";
-import * as functions from 'firebase-functions';
+import * as functions from "firebase-functions";
 import { getExtensions } from "firebase-admin/extensions";
 import { getFunctions } from "firebase-admin/functions";
 
-import * as md5 from 'md5';
+import * as md5 from "md5";
 
 enum ChangeType {
   CREATE,
@@ -27,7 +27,7 @@ admin.initializeApp();
 exports.fieldUniqueness =  functions.handler.firestore.document.onWrite(
   async (change): Promise<void> => {
     const changeType = getChangeType(change);
-    functions.logger.log('Started execution of Field Uniqueness extension');
+    functions.logger.log("Started execution of Field Uniqueness extension");
     try {
       switch (changeType) {
         case ChangeType.CREATE:
@@ -40,9 +40,9 @@ exports.fieldUniqueness =  functions.handler.firestore.document.onWrite(
           await handleUpdateDocument(change.before, change.after);
           break;
       }
-      functions.logger.log('Completed execution of Field Uniqueness extension');
+      functions.logger.log("Completed execution of Field Uniqueness extension");
     } catch (err) {
-      functions.logger.log('Error executing Field Uniqueness extension', err);
+      functions.logger.log("Error executing Field Uniqueness extension", err);
     }
   }
 );
@@ -51,7 +51,7 @@ const auxCollection = admin.firestore().collection(config.auxCollection);
 
 const extractUniqueField = (snapshot: admin.firestore.DocumentSnapshot): string => {
   const field = snapshot.get(config.fieldName);
-  return (config.hashField === 'yes') ? md5(field) : field;
+  return (config.hashField === "yes") ? md5(field) : field;
 };
 
 const getChangeType = (
@@ -72,9 +72,9 @@ const handleCreateDocument = async (
   const uniqueField = extractUniqueField(snapshot);
   if (uniqueField) {
     await auxCollection.doc(uniqueField).set({id: snapshot.id, [config.fieldName]: snapshot.get(config.fieldName)});
-    functions.logger.log('Document created with unique field');
+    functions.logger.log("Document created with unique field");
   } else {
-    functions.logger.log('Document created without unique field, no processing is required');
+    functions.logger.log("Document created without unique field, no processing is required");
   }
 };
 
@@ -84,9 +84,9 @@ const handleDeleteDocument = async (
   const uniqueField = extractUniqueField(snapshot);
   if (uniqueField) {
     await auxCollection.doc(uniqueField).delete();
-    functions.logger.log('Document updated with unique field');
+    functions.logger.log("Document updated with unique field");
   } else {
-    functions.logger.log('Document deleted without unique field, no processing is required');
+    functions.logger.log("Document deleted without unique field, no processing is required");
   }
 };
 
@@ -96,17 +96,17 @@ const handleUpdateDocument = async (
 ): Promise<void> => {
   const uniqueFieldBefore = extractUniqueField(before);
   const uniqueFieldAfter = extractUniqueField(after);
-  console.log('handleUpdateDocument', uniqueFieldBefore, uniqueFieldAfter);
+  console.log("handleUpdateDocument", uniqueFieldBefore, uniqueFieldAfter);
 
   // If previous and updated documents have no unique field, skip.
   if (uniqueFieldBefore === undefined && uniqueFieldAfter === undefined) {
-    functions.logger.log('Document updated without unique field, no processing is required');
+    functions.logger.log("Document updated without unique field, no processing is required");
     return;
   }
 
-  // If unique field from previous and updated documents didn't change, skip.
+  // If unique field from previous and updated documents didn"t change, skip.
   if (uniqueFieldBefore === uniqueFieldAfter) {
-    functions.logger.log('Document updated, unique field has not changed, no processing is required');
+    functions.logger.log("Document updated, unique field has not changed, no processing is required");
     return;
   } else {
     const batch = admin.firestore().batch();
@@ -115,7 +115,7 @@ const handleUpdateDocument = async (
     }
     batch.set(auxCollection.doc(uniqueFieldAfter), {id: after.id, [config.fieldName]: after.get(config.fieldName)});
     await batch.commit();
-    functions.logger.log('Document updated with unique field');
+    functions.logger.log("Document updated with unique field");
   }
 };
 
@@ -126,30 +126,27 @@ const handleExistingDocument = async (
   const uniqueField = extractUniqueField(snapshot);
   try {
     if (uniqueField) {
+      // the doc has been added with a unique field, we need to add a new doc to the aux collection
       const auxDoc = await auxCollection.doc(uniqueField).get();
-      if(auxDoc.exists) {
-        const auxData = auxDoc.data() as FirebaseFirestore.DocumentData;
-        if(auxData.duplicateIds) {
+      if (auxDoc.exists) {
+        if (auxDoc.get("id") !== snapshot.id) {
+          // if the ids don't match, it means it's a duplicate
           await bulkWriter.update(
-            auxCollection.doc(uniqueField),
-            {duplicateIds: [auxDoc.id, snapshot.id]}
+            auxDoc.ref,
+            {duplicate: true}
           );
-        } else {
-          await bulkWriter.update(
-            auxCollection.doc(uniqueField),
-            {duplicateIds: admin.firestore.FieldValue.arrayUnion(snapshot.id)}
-          );
+          const message = `Document with unique field already existed, document with field ${config.fieldName} with value ${uniqueField} in ${config.collection} collection is duplicated`;
+
+          functions.logger.log(message);
         }
-        functions.logger.log(`Document with unique field already existed, ${config.collection} is duplicated`);
-        throw new Error(`Document with unique field already existed, ${config.collection} is duplicated`);
       } else {
         await bulkWriter.set(
-          auxCollection.doc(uniqueField),
+          auxDoc.ref,
           {id: snapshot.id, [config.fieldName]: snapshot.get(config.fieldName)}
         );
       }
     } else {
-      functions.logger.log('Document without unique field, no processing is required');
+      functions.logger.log("Document without unique field, no processing is required");
     }
   } catch (err) {
     functions.logger.log(`Error executing Field Uniqueness backfill with ${config.collection}: ${uniqueField}`, err);
@@ -164,7 +161,7 @@ export const fieldUniquenessBackfill = functions.tasks
     if (config.doBackfill !== "yes") {
       await runtime.setProcessingState(
         "PROCESSING_COMPLETE",
-        'Existing documents were not checked for uniqueness because "Check uniqueness for existing documents?" is configured to false. ' +
+        "Existing documents were not checked for uniqueness because 'Check uniqueness for existing documents?' is configured to false. " +
           "If you want to fill in missing checks, reconfigure this instance."
       );
       return;
