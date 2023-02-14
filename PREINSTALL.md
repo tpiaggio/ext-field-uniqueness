@@ -29,7 +29,7 @@ match /users/{userId} {
 }
 ```
 
-If you want, you can hash the value of the field due to contraints on document IDs. For that, you can select 'Yes' when you're prompted to select if you want to hash the field or not. The Security Rules change slightly, looking like this:
+If you want, you can hash the value of the field due to constraints on document IDs. For that, you can select 'Yes' when you're prompted to select if you want to hash the field or not. The Security Rules change slightly, looking like this:
 
 ```js
 function isUsernameAvailable() {

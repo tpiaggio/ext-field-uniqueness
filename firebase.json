@@ -1,0 +1,38 @@
+{
+  "extensions": {
+    "ext-field-uniqueness": "./"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "hub": {
+      "port": 4000
+    },
+    "storage": {
+      "port": 9199
+    },
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8080
+    }
+  },
+  "functions": {
+    "port": 5002,
+    "runtime": "nodejs16",
+    "source": "functions"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+ }
