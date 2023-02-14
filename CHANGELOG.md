@@ -1,3 +1,7 @@
+## Version 0.1.4
+
+added testing using jest and the Firebase Emulator Suite.
+
 ## Version 0.1.3
 
 feature - When executing the backfill function, add a property named _duplicate_ which is set to true if there were duplicate values of the unique field.

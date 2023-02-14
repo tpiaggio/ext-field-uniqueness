@@ -10,7 +10,8 @@
 This extension listens to your specified Cloud Firestore collection. If you add a string to a specified field in any document within that collection, this extension:
 
 - Gets the type of event it listened to and the string value of the specified field.
-- Creates or deletes a document with that value as it's key on a separate specified aux collection
+- Creates or deletes a document with that value as it's key on a separate specified aux collection.
+- Allows you to decide if you want to check uniqueness for existing documents or only new ones.
 
 #### Firestore Security Rules
 
@@ -35,7 +36,7 @@ match /users/{userId} {
 }
 ```
 
-If you want, you can hash the value of the field due to contraints on document IDs. For that, you can select 'Yes' when you're prompted to select if you want to hash the field or not. The Security Rules change slightly, looking like this:
+If you want, you can hash the value of the field due to constraints on document IDs. For that, you can select 'Yes' when you're prompted to select if you want to hash the field or not. The Security Rules change slightly, looking like this:
 
 ```js
 function isUsernameAvailable() {
@@ -67,7 +68,7 @@ To install an extension, your project must be on the [Blaze (pay as you go) plan
 * Field name: What is the name of the field that you want to check for uniqueness?
 
 
-* Hash field: The value of the unique field will be used as an id for a new document in Firestore. Would you like to hash the value of the field due to contraints on document IDs?
+* Hash field: The value of the unique field will be used as an id for a new document in Firestore. Would you like to hash the value of the field due to constraints on document IDs?
 
 
 * Aux collection: What is the name of the auxiliar collection where you want to write documents?
