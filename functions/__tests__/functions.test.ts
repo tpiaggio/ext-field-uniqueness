@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { waitForDocumentDelete, waitForDocumentToExistInCollection } from './helpers';
+import setupExtension from './helpers/setupExtension';
 
 /** required to ensure the emulator port is used for the tests */
 process.env.FIRESTORE_EMULATOR_HOST = "localhost:8080";
@@ -7,6 +8,7 @@ process.env.FIRESTORE_EMULATOR_HOST = "localhost:8080";
 admin.initializeApp({
  projectId: "demo-test",
 });
+setupExtension();
 
 describe("extension", () => {
  const db = admin.firestore();

@@ -12,7 +12,7 @@ You can test out this extension right away!
 
 1.  This newly created collection and documents, used in combination with Security Rules, will prevent the client creating documents with duplicate values for the specified field.
 
-1.  You also have the option to hash the `${FIELD_NAME}` selecting 'Yes' when prompted to hash the field upon installation, due to contraints on document IDs.
+1.  You also have the option to hash the `${FIELD_NAME}` selecting 'Yes' when prompted to hash the field upon installation, due to constraints on document IDs.
 
 1.  If you want to check uniqueness for existing documents, you can configure the parameter `${DO_BACKFILL}` selecting 'Yes' when prompted to, this will create the aux collection with the docs containing the unique value for existing documents.
 
