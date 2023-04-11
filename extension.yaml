@@ -1,7 +1,7 @@
 # Learn detailed information about the fields of an extension.yaml file in the docs:
 # https://firebase.google.com/docs/extensions/alpha/ref-extension-yaml
 
-name: ext-field-uniqueness  # Identifier for your extension
+name: field-uniqueness  # Identifier for your extension
 version: 0.1.4  # Follow semver versioning
 specVersion: v1beta  # Version of the Firebase Extensions specification
 icon: image.png

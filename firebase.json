@@ -1,6 +1,6 @@
 {
   "extensions": {
-    "ext-field-uniqueness": "./"
+    "field-uniqueness": "./"
   },
   "storage": {
     "rules": "storage.rules"
