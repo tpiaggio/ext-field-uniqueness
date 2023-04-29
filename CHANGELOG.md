@@ -1,3 +1,7 @@
+## Version 0.1.5
+
+stable release.
+
 ## Version 0.1.4
 
 added testing using jest and the Firebase Emulator Suite.
