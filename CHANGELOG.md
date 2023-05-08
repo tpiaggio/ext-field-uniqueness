@@ -1,3 +1,7 @@
+## Version 0.1.6
+
+add tag 'utilities' and change display name
+
 ## Version 0.1.5
 
 stable release.

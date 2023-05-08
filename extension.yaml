@@ -2,16 +2,17 @@
 # https://firebase.google.com/docs/extensions/alpha/ref-extension-yaml
 
 name: field-uniqueness  # Identifier for your extension
-version: 0.1.5  # Follow semver versioning
+version: 0.1.6  # Follow semver versioning
 specVersion: v1beta  # Version of the Firebase Extensions specification
 icon: image.png
+tags: [utilities]
 
 # Friendly display name for your extension (~3-5 words)
-displayName: Field Uniqueness
+displayName: Enforce Field Uniqueness
 
 # Brief description of the task your extension performs (~1 sentence)
 description: >-
-  Ensures uniqueness on a specified field of a document written to a specified Cloud Firestore collection.
+  Enforces uniqueness on a specified field of a document written to a specified Cloud Firestore collection.
 
 license: Apache-2.0  # https://spdx.org/licenses/
 
